@@ -1,0 +1,109 @@
+breadcrumb breadcrumb (
+    name: Breadcrumb
+
+    entry admin-governance-dashboard (
+        name: ADMIN GOVERNANCE DASHBOARD
+        pageNumber: 50
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 50
+            }
+        }
+    )
+
+    entry complaint-action (
+        name: Complaint Action
+        pageNumber: 31
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 31
+            }
+        }
+    )
+
+    entry department-performance (
+        name: Department Performance
+        pageNumber: 51
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 51
+            }
+        }
+    )
+
+    entry home (
+        name: Home
+        pageNumber: 1
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 1
+            }
+        }
+    )
+
+    entry officer-dashboard (
+        name: Officer Dashboard
+        pageNumber: 30
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 30
+            }
+        }
+    )
+
+    entry reassign-complaint (
+        name: Reassign Complaint
+        pageNumber: 40
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 40
+            }
+        }
+    )
+
+    entry submit-complaint (
+        name: Submit Complaint
+        pageNumber: 10
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 10
+            }
+        }
+    )
+
+    entry track-complaint (
+        name: Track Complaint
+        pageNumber: 20
+        execution {
+            sequence: 10
+        }
+        link {
+            target: {
+                page: 20
+            }
+        }
+    )
+
+)
+
