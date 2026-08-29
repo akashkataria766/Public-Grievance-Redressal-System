@@ -1,0 +1,300 @@
+page 40 (
+    name: Reassign Complaint
+    alias: REASSIGN-COMPLAINT
+    title: Reassign Complaint
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region reassignment-panel (
+        name: Reassignment Panel
+        type: staticContent
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    pageItem P40_COMPLAINT_ID (
+        type: selectList
+        label {
+            label: Complaint
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    complaint_id AS display_value,
+                    complaint_id AS return_value
+                FROM pgrs_complaints
+                WHERE status_id = (
+                    SELECT status_id 
+                    FROM pgrs_status_manager 
+                    WHERE status_code = 'IN_PROGRESS'
+                )
+                ORDER BY complaint_id DESC
+                ```
+            nullDisplayValue: " - Select -"
+        }
+        layout {
+            sequence: 10
+            region: @reassignment-panel
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            height: 1
+        }
+    )
+
+    pageItem P40_CURRENT_OFFICER (
+        type: displayOnly
+        label {
+            label: Current Officer
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @reassignment-panel
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+        }
+        source {
+            type: sqlQuerySingleValue
+            sqlQuery:
+                ```sql
+                SELECT u.full_name
+                FROM pgrs_users u
+                JOIN pgrs_complaints c
+                  ON u.user_id = c.assigned_officer_id
+                WHERE c.complaint_id = :P40_COMPLAINT_ID
+                ```
+            used: always
+        }
+    )
+
+    pageItem P40_NEW_OFFICER (
+        type: selectList
+        label {
+            label: New Officer
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT full_name AS display_value,
+                       user_id  AS return_value
+                FROM pgrs_users
+                WHERE role_id = 2
+                ORDER BY full_name
+                ```
+        }
+        layout {
+            sequence: 30
+            region: @reassignment-panel
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            height: 1
+        }
+    )
+
+    pageItem P40_REMARK (
+        type: textarea
+        label {
+            label: Reassignment Reason
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @reassignment-panel
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+        validation {
+            valueRequired: true
+        }
+    )
+
+    button reassign-complaint (
+        buttonName: REASSIGN_COMPLAINT
+        label: Reassign Officer
+        layout {
+            sequence: 50
+            region: @reassignment-panel
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction change (
+        name: Change
+        execution {
+            sequence: 10
+        }
+        when {
+            selectionType: items
+            items: P40_COMPLAINT_ID
+        }
+
+        action native-refresh (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @reassignment-panel
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    dynamicAction get-current-officer (
+        name: get current officer
+        execution {
+            sequence: 20
+        }
+        when {
+            selectionType: items
+            items: P40_COMPLAINT_ID
+        }
+
+        action native-set-value (
+            action: setValue
+            settings {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT u.full_name
+                    FROM pgrs_complaints c
+                    JOIN pgrs_users u
+                      ON u.user_id = c.assigned_officer_id
+                    WHERE c.complaint_id = :P40_COMPLAINT_ID
+                    ```
+                itemsToSubmit: P40_COMPLAINT_ID
+            }
+            affectedElements {
+                selectionType: items
+                items: P40_CURRENT_OFFICER
+            }
+            execution {
+                sequence: 10
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process reassign-officer (
+        name: Reassign Officer
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                BEGIN
+                
+                PGRS_REASSIGN_OFFICER(
+                    p_complaint_id   => TO_NUMBER(:P40_COMPLAINT_ID),
+                    p_new_officer_id => TO_NUMBER(:P40_NEW_OFFICER),
+                    p_action_by      => 21,
+                    p_remark         => :P40_REMARK
+                );
+                
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+            point: afterSubmit
+        }
+        successMessage {
+            successMessage: Complaint reassigned successfully.
+        }
+        advanced {
+            executionMappingIdentifier: 145343910364501519532
+        }
+        serverSideCondition {
+            whenButtonPressed: @reassign-complaint
+        }
+    )
+
+    branch (
+        name: Branch to Page
+        execution {
+            sequence: 10
+            point: afterSubmit
+        }
+        behavior {
+            target: {
+                page: 30
+                clearCache: 30
+            }
+        }
+    )
+
+)
+

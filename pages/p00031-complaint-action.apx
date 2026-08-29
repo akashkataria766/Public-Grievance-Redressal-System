@@ -1,0 +1,380 @@
+page 31 (
+    name: Complaint Action
+    alias: COMPLAINT-ACTION
+    title: Complaint Action
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region complaint-details (
+        name: Complaint Details
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select COMPLAINT_ID,
+                       DEPT_NAME,
+                       STATUS_CODE,
+                       CREATED_AT,
+                       DUE_DATE,
+                       IS_ESCALATED,
+                       ASSIGNED_OFFICER_ID
+                  from V_PGRS_ACTIVE_COMPLAINTS
+                WHERE complaint_id = :P31_COMPLAINT_ID
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: [
+                #DEFAULT#
+                t-IRR-region--hideHeader js-addHiddenHeadingRoleDesc
+            ]
+        }
+        pagination {
+            type: rowRangesXToY
+        }
+        performance {
+            maxRowsToProcess: 1000000
+        }
+        advanced {
+            savedReportMappingIdentifier: 145343908016563519509
+        }
+
+        column ASSIGNED_OFFICER_ID (
+            type: plainText
+            heading {
+                heading: Assigned Officer Id
+                alignment: end
+            }
+            layout {
+                sequence: 70
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: G
+            }
+        )
+
+        column COMPLAINT_ID (
+            type: plainText
+            heading {
+                heading: Complaint Id
+                alignment: end
+            }
+            layout {
+                sequence: 10
+                columnAlignment: end
+            }
+            source {
+                dataType: NUMBER
+            }
+            advanced {
+                endUserAlias: A
+            }
+        )
+
+        column CREATED_AT (
+            type: plainText
+            heading {
+                heading: Created At
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: D
+            }
+        )
+
+        column DEPT_NAME (
+            type: plainText
+            heading {
+                heading: Dept Name
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: B
+            }
+        )
+
+        column DUE_DATE (
+            type: plainText
+            heading {
+                heading: Due Date
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: DATE
+            }
+            advanced {
+                endUserAlias: E
+            }
+        )
+
+        column IS_ESCALATED (
+            type: plainText
+            heading {
+                heading: Is Escalated
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: F
+            }
+        )
+
+        column STATUS_CODE (
+            type: plainText
+            heading {
+                heading: Status Code
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            advanced {
+                endUserAlias: C
+            }
+        )
+
+        page {
+            borderWidth: 0.5
+            borderColor: #666666
+        }
+
+        savedReport 1453977471 (
+            visibility: primaryDefault
+            view {
+                rowsPerPage: 50
+            }
+
+            displayColumn ASSIGNED_OFFICER_ID (
+                sequence: 7
+            )
+
+            displayColumn COMPLAINT_ID (
+                sequence: 1
+            )
+
+            displayColumn CREATED_AT (
+                sequence: 4
+            )
+
+            displayColumn DEPT_NAME (
+                sequence: 2
+            )
+
+            displayColumn DUE_DATE (
+                sequence: 5
+            )
+
+            displayColumn IS_ESCALATED (
+                sequence: 6
+            )
+
+            displayColumn STATUS_CODE (
+                sequence: 3
+            )
+
+        )
+
+    )
+
+    region officer-action (
+        name: Officer Action
+        type: staticContent
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+    pageItem P31_COMPLAINT_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            slot: body
+        }
+    )
+
+    pageItem P31_NEW_STATUS (
+        type: selectList
+        label {
+            label: Update Status
+            alignment: left
+        }
+        lov {
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                SELECT 
+                    status_code AS display_value,
+                    status_code AS return_value
+                FROM pgrs_status_manager
+                WHERE status_code IN ('IN_PROGRESS','RESOLVED')
+                ORDER BY status_code
+                ```
+            displayExtraValues: false
+            nullDisplayValue: -- view  status --
+        }
+        layout {
+            sequence: 40
+            slot: body
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            height: 1
+        }
+    )
+
+    pageItem P31_REMARKS (
+        type: textarea
+        label {
+            label: Remarks
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            slot: body
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 30
+            height: 5
+        }
+    )
+
+    button update-status (
+        buttonName: UPDATE_STATUS
+        label: Update Status
+        layout {
+            sequence: 10
+            region: @officer-action
+            slot: regionBody
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process update-complaint-status (
+        name: Update Complaint Status
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                BEGIN
+                
+                PGRS_UPDATE_COMPLAINT_STATUS(
+                    p_complaint_id => :P31_COMPLAINT_ID,
+                    p_new_status   => :P31_NEW_STATUS,
+                    p_action_by    => 22,
+                    p_remark       => :P31_REMARKS
+                );
+                
+                END;
+                ```
+        }
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: Complaint status updated successfully.
+        }
+        advanced {
+            executionMappingIdentifier: 145343909365481519522
+        }
+        serverSideCondition {
+            whenButtonPressed: @update-status
+        }
+    )
+
+    branch (
+        name: Branch to page
+        execution {
+            sequence: 10
+        }
+        behavior {
+            target: {
+                page: 30
+                clearCache: 30
+            }
+        }
+        serverSideCondition {
+            whenButtonPressed: @update-status
+        }
+    )
+
+)
+
